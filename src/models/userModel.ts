@@ -1,48 +1,4 @@
-// import pool from "../config/database";
 
-// export const findUserByEmail = async (email: string) => {
-//   try {
-//     const query = `select * from users where email = $1`;
-//     const { rows } = await pool.query(query, [email]);
-//     return {
-//       error: false,
-//       message: "success",
-//       data: rows[0],
-//     };
-//   } catch (error) {
-//     return {
-//       error: true,
-//       message: "Error in DB",
-//       data: {},
-//     };
-//   }
-// };
-
-// export const createUser = async (
-//   first_name: string,
-//   last_name: string,
-//   email: string,
-//   hashedPassword: string,
-//   phone_number: string,
-//   date_of_birth: string
-// ) => {
-//   const result = await pool.query(
-//     `insert into users(first_name,last_name,email,password,phone_number,date_of_birth) values(
-//           $1,$2,$3,$4,$5,$6
-//       ) returning *`,
-//     [first_name, last_name, email, hashedPassword, phone_number, date_of_birth]
-//   );
-//   return result.rows[0];
-// };
-
-// export const profile = async (user_id: number) => {
-//   const details = await pool.query(`select * from users where user_id = $1`, [
-//     user_id,
-//   ]);
-//   return details.rows[0];
-// };
-
-//-------------------------------------------------------------------------------------
 import pool from "../config/database";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";

@@ -5,24 +5,7 @@ import pool from '../config/database';
 interface AuthRequest extends Request {
   user?: any;
 }
-
-// export const authenticateUser = (req: AuthRequest, res: Response, next: NextFunction) => {
-//   try{
-//     const token = req.headers.authorization?.split(' ')[1];
-
-//     if(!token){
-//      res.status(403).json({ message: 'No token provided' });
-//      return;
-//     }
-
-//     const verify = jwt.verify(token,"mysecrettoken")as { user_id: number };
-//     req.user = verify;
-//     console.log(req.user);
-//     next();
-//   }catch(err){
-//    res.status(401).json({ message: 'Not authorized' });
-//   }
-// }; 
+ 
 
 export const authenticateUser = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

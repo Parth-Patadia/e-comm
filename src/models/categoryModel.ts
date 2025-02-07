@@ -1,36 +1,4 @@
-// import pool from "../config/database";
 
-// export const allCategory = async () => {
-//   const categories = await pool.query(`select category_name from category`);
-//   return categories.rows;
-// };
-
-// export const insertCategory = async (category_name: string) => {
-//   const category = await pool.query(
-//     `insert into category(category_name) values($1)`,
-//     [category_name]
-//   );
-//   return category.rows;
-// };
-
-// export const catById = async (category_id: number) => {
-//   const category = await pool.query(
-//     `select * from category where category_id = $1`,
-//     [category_id]
-//   );
-//   return category.rows;
-// };
-
-// export const updatecategory = async(category_name:string,category_id:number) =>{
-//     const category = await pool.query(
-//         `update category set category_name = $1, updated_at = current_timestamp where category_id = $2 returning *`,
-//         [category_name, category_id]
-//       );
-
-//       return category.rows;
-// }
-
-//----------------------------------------------------------------------------------------
 
 import pool from "../config/database";
 
