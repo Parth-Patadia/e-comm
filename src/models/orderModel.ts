@@ -188,3 +188,46 @@ export const updateOrder = async (orderId: number, status: string) => {
     };
   }
 };
+
+export const getOrderItems = async (user_id: number, order_id: number) => {
+  try {
+    const orderResult = await pool.query(
+      `SELECT o.order_id, o.final_amount, 
+            o.status, o.payment_method, o.created_at, a.address_line_1 || ' ' || a.address_line_2 as full_address
+       FROM orders o
+       JOIN address a ON o.address_id = a.address_id
+       WHERE o.order_id = $1 AND o.user_id = $2`,
+      [order_id, user_id]
+    );
+    console.log(orderResult.rows[0])
+    if (orderResult.rowCount === 0) {
+      return {
+        error: true,
+        message: "Order not found or access denied",
+        data: null,
+      };
+    }
+    const orderDetails = orderResult.rows[0];
+    // Fetch order items
+    const itemsResult = await pool.query(
+      `SELECT oi.order_item_id, oi.product_id, p.product_name, oi.quantity, oi.product_price
+       FROM orders_item oi
+       JOIN products p ON oi.product_id = p.product_id
+       WHERE oi.order_id = $1`,
+      [order_id]
+    );
+    orderDetails.items = itemsResult.rows;
+    return {
+      error: false,
+      message: "Order details fetched successfully",
+      data: orderDetails,
+    };
+
+  } catch (error) {
+    return {
+      error: true,
+      message: "Error in fetching all order items",
+      data: error,
+    };
+  }
+};

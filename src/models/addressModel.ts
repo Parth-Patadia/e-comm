@@ -77,12 +77,66 @@ export const getUserAddresses = async (user_id: number) => {
     return {
       error: false,
       message: "Address found",
-      data: result.rows[0],
+      data: result.rows,
     };
   } catch (error) {
     return {
       error: true,
       message: "Address not found",
+      data: null,
+    };
+  }
+};
+
+export const updateAddress = async (
+  address_id: number,
+  user_id: number,
+  addressData: AddressData
+) => {
+  const fields = Object.keys(addressData);
+  const values = Object.values(addressData);
+
+  if (fields.length === 0) {
+    return {
+      error: true,
+      message: "No fields to update",
+      data: null,
+    };
+  }
+
+  const setClause = fields
+    .map((field, index) => `${field} = $${index + 1}`)
+    .join(", ");
+  console.log(setClause);
+
+  try {
+    const result = await pool.query(
+      `UPDATE address 
+       SET ${setClause},updated_at = CURRENT_TIMESTAMP 
+       WHERE address_id = $${fields.length + 1} AND user_id = $${
+        fields.length + 2
+      } 
+       RETURNING *`,
+      [...values, address_id, user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        message: "Address not found or not updated",
+        data: null,
+      };
+    }
+
+    return {
+      error: false,
+      message: "Address updated successfully",
+      data: result.rows[0],
+    };
+  } catch (error) {
+    return {
+      error: true,
+      message: "Address not updated",
       data: null,
     };
   }

@@ -1,4 +1,3 @@
-
 import pool from "../config/database";
 
 interface Product {
@@ -25,14 +24,20 @@ interface ServiceResponse {
   data: any;
 }
 
-export const createProductService = async (product: Product): Promise<ServiceResponse> => {
+export const createProductService = async (
+  product: Product
+): Promise<ServiceResponse> => {
   try {
-    if (!product.product_name || !product.product_price || 
-        !product.minimum_quantity || !product.current_quantity) {
+    if (
+      !product.product_name ||
+      !product.product_price ||
+      !product.minimum_quantity ||
+      !product.current_quantity
+    ) {
       return {
         error: true,
         message: "Required fields missing",
-        data: null
+        data: null,
       };
     }
 
@@ -49,25 +54,27 @@ export const createProductService = async (product: Product): Promise<ServiceRes
         product.minimum_quantity,
         product.current_quantity,
         product.avg_rating,
-        product.category_id
+        product.category_id,
       ]
     );
 
     return {
       error: false,
       message: "Product created successfully",
-      data: rows[0]
+      data: rows[0],
     };
   } catch (error) {
     return {
       error: true,
       message: "Error creating product",
-      data: null
+      data: null,
     };
   }
 };
 
-export const getProductByIdService = async (productId: number): Promise<ServiceResponse> => {
+export const getProductByIdService = async (
+  productId: number
+): Promise<ServiceResponse> => {
   try {
     const { rows } = await pool.query(
       "SELECT * FROM products WHERE product_id = $1",
@@ -78,20 +85,20 @@ export const getProductByIdService = async (productId: number): Promise<ServiceR
       return {
         error: true,
         message: "Product not found",
-        data: null
+        data: null,
       };
     }
 
     return {
       error: false,
       message: "Product fetched successfully",
-      data: rows[0]
+      data: rows[0],
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching product",
-      data: null
+      data: null,
     };
   }
 };
@@ -102,13 +109,13 @@ export const getAllProductsService = async (): Promise<ServiceResponse> => {
     return {
       error: false,
       message: "Products fetched successfully",
-      data: rows
+      data: rows,
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching products",
-      data: null
+      data: null,
     };
   }
 };
@@ -124,13 +131,13 @@ export const getProductsByCategoryService = async (
     return {
       error: false,
       message: "Products fetched successfully",
-      data: rows
+      data: rows,
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching products by category",
-      data: null
+      data: null,
     };
   }
 };
@@ -152,7 +159,7 @@ export const addFeedbackService = async (
       return {
         error: true,
         message: "You cannot give feedback to this product",
-        data: null
+        data: null,
       };
     }
 
@@ -161,7 +168,12 @@ export const addFeedbackService = async (
       `INSERT INTO feedback (user_id, product_id, rating, description) 
        VALUES ($1, $2, $3, $4) 
        RETURNING *`,
-      [feedback.user_id, feedback.product_id, feedback.rating, feedback.description]
+      [
+        feedback.user_id,
+        feedback.product_id,
+        feedback.rating,
+        feedback.description,
+      ]
     );
 
     // Update average rating
@@ -179,13 +191,13 @@ export const addFeedbackService = async (
     return {
       error: false,
       message: "Feedback added successfully",
-      data: rows[0]
+      data: rows[0],
     };
   } catch (error) {
     return {
       error: true,
       message: "Error adding feedback",
-      data: null
+      data: null,
     };
   }
 };
@@ -201,13 +213,162 @@ export const getProductFeedbackService = async (
     return {
       error: false,
       message: "Feedbacks fetched successfully",
-      data: rows
+      data: rows,
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching feedbacks",
-      data: null
+      data: null,
+    };
+  }
+};
+
+export const filters = async (
+  page: number,
+  limit: number,
+  sortBy: string,
+  sortOrder: "ASC" | "DESC",
+  search: string,
+  minPrice?: number,
+  maxPrice?: number,
+  minRating?: number
+): Promise<ServiceResponse> => {
+  try {
+    const offset = (page - 1) * limit;
+
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    // Search Query
+    let searchQuery = "";
+    if (search) {
+      searchQuery = `AND product_name ILIKE $${paramIndex++}`;
+      params.push(`%${search}%`);
+    }
+
+    // Price Filter
+    let priceFilter = "";
+    if (minPrice !== undefined && maxPrice !== undefined) {
+      priceFilter = `AND product_price BETWEEN $${paramIndex} AND $${
+        paramIndex + 1
+      }`;
+      params.push(minPrice, maxPrice);
+      paramIndex += 2;
+    } else if (minPrice !== undefined) {
+      priceFilter = `AND product_price >= $${paramIndex}`;
+      params.push(minPrice);
+      paramIndex += 1;
+    } else if (maxPrice !== undefined) {
+      priceFilter = `AND product_price <= $${paramIndex}`;
+      params.push(maxPrice);
+      paramIndex += 1;
+    }
+
+    // Rating Filter
+    let ratingFilter = "";
+    if (minRating !== undefined) {
+      ratingFilter = `AND avg_rating >= $${paramIndex}`;
+      params.push(minRating);
+      paramIndex += 1;
+    }
+
+    // Total Count Query
+    const totalQuery = `
+      SELECT COUNT(*) FROM products 
+      WHERE TRUE 
+      ${searchQuery} 
+      ${priceFilter} 
+      ${ratingFilter}
+    `;
+
+    const totalResult = await pool.query(totalQuery, params);
+    //console.log(totalResult.rows[0]);
+    const totalCount = parseInt(totalResult.rows[0].count);
+
+    // Add Pagination
+    params.push(limit, offset);
+
+    // Main Query
+    const query = `
+      SELECT * FROM products 
+      WHERE TRUE 
+      ${searchQuery} 
+      ${priceFilter} 
+      ${ratingFilter}
+      ORDER BY ${sortBy} ${sortOrder} 
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const result = await pool.query(query, params);
+    //console.log(result)
+
+    return {
+      error: false,
+      message: "Products fetched successfully",
+      data: {
+        totalCount,
+        products: result.rows,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      },
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      error: true,
+      message: "Error fetching products",
+      data: error,
+    };
+  }
+};
+
+export const updateProduct = async (
+  product_id: number,
+  productData: Product
+) => {
+  const fields = Object.keys(productData);
+  const values = Object.values(productData);
+
+  if (fields.length === 0) {
+    return {
+      error: true,
+      message: "No fields to update",
+      data: null,
+    };
+  }
+
+  const setClause = fields
+    .map((field, index) => `${field} = $${index + 1}`)
+    .join(", ");
+
+  try {
+    const result = await pool.query(
+      `UPDATE products 
+           SET ${setClause} ,,updated_at = CURRENT_TIMESTAMP
+           WHERE product_id = $${fields.length + 1} 
+           RETURNING *`,
+      [...values, product_id]
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        message: "Product not found or not updated",
+        data: null,
+      };
+    }
+
+    return {
+      error: false,
+      message: "Product updated successfully",
+      data: result.rows[0],
+    };
+  } catch (error) {
+    return {
+      error: true,
+      message: "Product not updated",
+      data: null,
     };
   }
 };

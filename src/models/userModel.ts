@@ -1,4 +1,3 @@
-
 import pool from "../config/database";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -21,36 +20,42 @@ interface ServiceResponse {
   data: any;
 }
 
-export const findUserByEmail = async (email: string): Promise<ServiceResponse> => {
+export const findUserByEmail = async (
+  email: string
+): Promise<ServiceResponse> => {
   try {
-    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
     return {
       error: false,
       message: "User found successfully",
-      data: rows[0] || null
+      data: rows[0] || null,
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching user",
-      data: null
+      data: null,
     };
   }
 };
 
-export const registerUserService = async (userData: User): Promise<ServiceResponse> => {
+export const registerUserService = async (
+  userData: User
+): Promise<ServiceResponse> => {
   try {
     const existingUser = await findUserByEmail(userData.email);
     if (existingUser.data) {
       return {
         error: true,
         message: "User already registered, please Login",
-        data: null
+        data: null,
       };
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    
+
     const result = await pool.query(
       `INSERT INTO users (
         first_name, last_name, email, password, 
@@ -63,36 +68,36 @@ export const registerUserService = async (userData: User): Promise<ServiceRespon
         userData.email,
         hashedPassword,
         userData.phone_number,
-        userData.date_of_birth
+        userData.date_of_birth,
       ]
     );
 
     return {
       error: false,
       message: "User registered successfully",
-      data: result.rows[0]
+      data: result.rows[0],
     };
   } catch (error) {
     return {
       error: true,
       message: "Error in registration",
-      data: null
+      data: null,
     };
   }
 };
 
 export const loginUserService = async (
-  email: string, 
+  email: string,
   password: string
 ): Promise<ServiceResponse> => {
   try {
     const user = await findUserByEmail(email);
-    
+
     if (!user.data) {
       return {
         error: true,
         message: "Invalid credentials",
-        data: null
+        data: null,
       };
     }
 
@@ -101,7 +106,7 @@ export const loginUserService = async (
       return {
         error: true,
         message: "Invalid credentials",
-        data: null
+        data: null,
       };
     }
 
@@ -118,20 +123,22 @@ export const loginUserService = async (
         token,
         user: {
           user_id: user.data.user_id,
-          email: user.data.email
-        }
-      }
+          email: user.data.email,
+        },
+      },
     };
   } catch (error) {
     return {
       error: true,
       message: "Error in login",
-      data: null
+      data: null,
     };
   }
 };
 
-export const getProfileService = async (userId: number): Promise<ServiceResponse> => {
+export const getProfileService = async (
+  userId: number
+): Promise<ServiceResponse> => {
   try {
     const { rows } = await pool.query(
       "SELECT user_id, first_name, last_name, email, phone_number, date_of_birth FROM users WHERE user_id = $1",
@@ -142,20 +149,67 @@ export const getProfileService = async (userId: number): Promise<ServiceResponse
       return {
         error: true,
         message: "User not found",
-        data: null
+        data: null,
       };
     }
 
     return {
       error: false,
       message: "Profile fetched successfully",
-      data: rows[0]
+      data: rows[0],
     };
   } catch (error) {
     return {
       error: true,
       message: "Error fetching profile",
-      data: null
+      data: null,
+    };
+  }
+};
+
+export const updateUser = async (user_id: number, userData: User) => {
+  const fields = Object.keys(userData);
+  const values = Object.values(userData);
+
+  if (fields.length === 0) {
+    return {
+      error: true,
+      message: "No fields to update",
+      data: null,
+    };
+  }
+
+  const setClause = fields
+    .map((field, index) => `${field} = $${index + 1}`)
+    .join(", ");
+
+  try {
+    const result = await pool.query(
+      `UPDATE users 
+           SET ${setClause} ,updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = $${fields.length + 1} 
+           RETURNING *`,
+      [...values, user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        message: "User not found or not updated",
+        data: null,
+      };
+    }
+
+    return {
+      error: false,
+      message: "User updated successfully",
+      data: result.rows[0],
+    };
+  } catch (error) {
+    return {
+      error: true,
+      message: "User not updated",
+      data: null,
     };
   }
 };

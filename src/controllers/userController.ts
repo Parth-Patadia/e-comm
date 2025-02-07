@@ -1,9 +1,9 @@
-
 import { Request, Response } from "express";
 import {
   registerUserService,
   loginUserService,
   getProfileService,
+  updateUser,
 } from "../models/userModel";
 
 export const registerUser = async (
@@ -101,6 +101,37 @@ export const getUserProfile = async (
       error: true,
       message: "Error fetching profile",
       data: null,
+    });
+  }
+};
+
+export const updateUserHandler = async (req: Request, res: Response) => {
+  try {
+    const user_id = (req as any).user.user_id;
+    const userData = req.body;
+
+    const updatedUser = await updateUser(user_id, userData);
+
+    if (updatedUser.error) {
+      res.status(404).json({
+        error: true,
+        message: updatedUser.message,
+        data: null,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      error: false,
+      message: updatedUser.message,
+      data: updatedUser.data,
+    });
+  } catch (error) {
+    console.error("Error in update User:", error);
+    res.status(500).json({
+      error: true,
+      message: "Failed to update User",
+      data: error,
     });
   }
 };

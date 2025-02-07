@@ -3,6 +3,7 @@ import {
   createAddress,
   removeAddress,
   getUserAddresses,
+  updateAddress,
 } from "../models/addressModel";
 
 export const addAddress = async (req: Request, res: Response) => {
@@ -86,6 +87,38 @@ export const allAddress = async (req: Request, res: Response) => {
     res.status(500).json({
       error: true,
       message: "Failed to get UserAddresses",
+      data: error,
+    });
+  }
+};
+
+export const updateAddressHandler = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.user_id;
+    const address_id = parseInt(req.params.id);
+    const addressData = req.body; // Get the fields to update from the request body
+
+    const updatedAddress = await updateAddress(address_id, userId, addressData);
+
+    if (updatedAddress.error) {
+      res.status(404).json({
+        error: true,
+        message: updatedAddress.message,
+        data: null,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      error: false,
+      message: updatedAddress.message,
+      data: updatedAddress.data,
+    });
+  } catch (error) {
+    console.error("Error in updateAddress:", error);
+    res.status(500).json({
+      error: true,
+      message: "Failed to update Address",
       data: error,
     });
   }

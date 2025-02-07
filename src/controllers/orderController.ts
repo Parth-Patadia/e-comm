@@ -3,7 +3,7 @@ import pool from "../config/database";
 import {
   createOrderService,
   getUserOrders,
-  updateOrder,
+  updateOrder,getOrderItems
 } from "../models/orderModel";
 import {
   createReturnService,
@@ -69,6 +69,25 @@ export const getUserOrder = async (req: Request, res: Response) => {
       .json({ error: true, message: "Error in fetching order", data: error });
   }
 };
+
+export const getOrderItemsById = async (req:Request, res:Response) =>{
+  try {
+    const user_id = (req as any).user.user_id;
+    const {order_id} = req.body;
+
+    const orderItems = await getOrderItems(user_id,order_id);
+    res.status(201).json({
+      error: false,
+      message: orderItems.message,
+      data: orderItems.data,
+    });
+
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: true, message: "Error in fetching order items", data: error });
+  }
+}
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
