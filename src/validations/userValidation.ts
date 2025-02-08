@@ -22,3 +22,17 @@ export const loginSchema = Joi.object({
 
   password: Joi.string().required(),
 });
+
+export const userIdParamSchema = Joi.object({
+  id: Joi.number().required().integer().positive(),
+});
+
+export const updateUserSchema = Joi.object({
+  first_name: Joi.string().min(2).max(20),
+
+  last_name: Joi.string().allow("").max(20),
+
+  phone_number: Joi.string().pattern(new RegExp("^[0-9]{10}$")),
+
+  date_of_birth: Joi.date().max("now"),
+});

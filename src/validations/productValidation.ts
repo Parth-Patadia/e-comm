@@ -7,7 +7,6 @@ export const createProductSchema = Joi.object({
   product_price: Joi.number().required().positive().precision(2),
   minimum_quantity: Joi.number().required().integer().min(1),
   current_quantity: Joi.number().required().integer().min(0),
-  avg_rating: Joi.number().min(0).max(5).default(0),
 
   category_id: Joi.number().required().integer().positive(),
 });
@@ -27,3 +26,15 @@ export const addFeedbackSchema = Joi.object({
 export const productFeedbackSchema = Joi.object({
   product_id: Joi.number().required().integer().positive(),
 });
+
+export const updateProductSchema = Joi.object({
+  product_name: Joi.string().min(2).max(100),
+  product_description: Joi.string().allow("").max(1000),
+
+  product_price: Joi.number().positive().precision(2),
+  minimum_quantity: Joi.number().integer().min(1),
+  current_quantity: Joi.number().integer().min(0),
+
+  category_id: Joi.number().integer().positive(),
+});
+

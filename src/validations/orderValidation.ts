@@ -26,3 +26,7 @@ export const updateReturnStatusSchema = Joi.object({
   return_id: Joi.number().required().integer().positive(),
   status: Joi.string().required().valid("approved", "rejected"),
 });
+
+export const orderIdSchema = Joi.object({
+  order_id: Joi.number().required().integer().positive(),
+});
