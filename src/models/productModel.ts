@@ -372,3 +372,35 @@ export const updateProduct = async (
     };
   }
 };
+
+export const deleteProduct = async (product_id: number) => {
+  try {
+      const result = await pool.query(
+          `DELETE FROM products 
+           WHERE product_id = $1 
+           RETURNING *`,
+          [product_id]
+      );
+
+      if (result.rows.length === 0) {
+          return {
+              error: true,
+              message: "Product not found or not deleted",
+              data: null,
+          };
+      }
+
+      return {
+          error: false,
+          message: "Product deleted successfully",
+          data: result.rows[0],
+      };
+  } catch (error) {
+    console.log(error)
+      return {
+          error: true,
+          message: "Product not deleted",
+          data: null,
+      };
+  }
+};

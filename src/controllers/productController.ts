@@ -6,7 +6,8 @@ import {
   getProductsByCategoryService,
   addFeedbackService,
   getProductFeedbackService,
-  filters,updateProduct
+  filters,updateProduct,
+  deleteProduct
 } from "../models/productModel";
 
 export const createProduct = async (
@@ -294,6 +295,35 @@ export const updateProductHandler = async (req: Request, res: Response) => {
       res.status(500).json({
           error: true,
           message: "Failed to update Product",
+          data: error,
+      });
+  }
+};
+
+export const deleteProductHandler = async (req: Request, res: Response) => {
+  try {
+      const product_id = parseInt(req.params.id);
+
+      const deletedProduct = await deleteProduct(product_id);
+
+      if (deletedProduct.error) {
+           res.status(404).json({
+              error: true,
+              message: deletedProduct.message,
+              data: null,
+          });return
+      }
+
+      res.status(200).json({
+          error: false,
+          message: deletedProduct.message,
+          data: deletedProduct.data,
+      });
+  } catch (error) {
+      console.error("Error in deleteProduct:", error);
+      res.status(500).json({
+          error: true,
+          message: "Failed to delete Product",
           data: error,
       });
   }
